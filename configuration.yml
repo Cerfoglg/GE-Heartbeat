@@ -1,6 +1,6 @@
-keystone_host: "http://172.18.0.8"
+keystone_host: "http://localhost"
 keystone_port: "5000"
-monasca_host: "http://172.18.0.10"
+monasca_host: "http://localhost"
 monasca_port: "8070"
 username: "mini-mon"
 password: "password"

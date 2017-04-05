@@ -5,6 +5,7 @@ import (
   "net/http"
   "encoding/json"
   "bytes"
+  "os"
   "io/ioutil"
   "gopkg.in/yaml.v2"
 )
@@ -39,48 +40,76 @@ func handler(w http.ResponseWriter, r *http.Request) {
     err := decoder.Decode(&m)
     if err != nil {
     	fmt.Println("Cannot decode message: ", err)
+    	http.Error(w, err.Error(), http.StatusBadRequest)
     	return
     }
-    fmt.Println(m.ID)
     r.Body.Close()
     
-    // Authenticating with Keystone and sending metric
+    // Creating http client
     client := &http.Client{}
     
+    // Creating keystone request for token
     data := []byte(`{"auth":{"passwordCredentials":{"username": "`+conf.USERNAME+`", "password":"`+conf.PASSWORD+`"}, "tenantName":"`+conf.TENANT+`"}}`)
     req, err := http.NewRequest("POST", ""+conf.KEYSTONE_HOST+":"+conf.KEYSTONE_PORT+"/v2.0/tokens", bytes.NewBuffer(data))
     req.Header.Set("Content-Type", "application/json")
     
+    // Requesting token
     resp, err := client.Do(req)
     if err != nil {
         fmt.Println("Failed to contact Keystone: ", err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
-    fmt.Println("response Status:", resp.Status)
-    fmt.Println("response Headers:", resp.Header)
+    if resp.StatusCode != 200 {
+    	fmt.Println("Error with Keystone: ", resp.Status, resp.Header, resp.Body)
+    	http.Error(w, err.Error(), http.StatusInternalServerError)
+    	return
+    }
+    
+    // Extracting token
     body, err := ioutil.ReadAll(resp.Body)
     if err != nil {
         fmt.Println("Failed to read response from Keystone: ", err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
     var f interface{}
 	err = json.Unmarshal(body, &f)
+	if err != nil {
+        fmt.Println("Failed to unmarshal JSON response from keystone: ", err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
 	token := f.(map[string]interface{})["access"].(map[string]interface{})["token"].(map[string]interface{})["id"]
-	fmt.Println("response Body:", token)
+	if token == nil {
+        fmt.Println("Failed to obtain token from keystone: ", err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
     resp.Body.Close()
     
+    // Creating request for Monasca
     data = []byte(`{"name": "GE_Heartbeat", "dimensions": {"id": "`+m.ID+`", "enabler_id": "`+m.Enabler_ID+`", "enabler_version": "`+m.Enabler_Version+`"}, "timestamp": `+m.Timestamp+`, "value": 1}`)
     req, err = http.NewRequest("POST", ""+conf.MONASCA_HOST+":"+conf.MONASCA_PORT+"/v2.0/metrics", bytes.NewBuffer(data))
     req.Header.Set("Content-Type", "application/json")
     req.Header.Set("X-Auth-Token", token.(string))
     
+    // Sending metric to Monasca
     resp, err = client.Do(req)
     if err != nil {
         fmt.Println("Failed to contact Monasca: ", err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
-    fmt.Println("response Status:", resp.Status)
-    fmt.Println("response Headers:", resp.Header)
+    if resp.StatusCode == 204 {
+	    w.WriteHeader(200)
+	    return
+    } else {
+    	fmt.Println("Error with Monasca: ", resp.Status, resp.Header, resp.Body)
+    	http.Error(w, err.Error(), http.StatusInternalServerError)
+    	return
+    }
+    resp.Body.Close()
 }
  
 func main() {
@@ -89,12 +118,12 @@ func main() {
 	data, err := ioutil.ReadFile("configuration.yml")
 	if err != nil {
         fmt.Println("Failed to read configuration: ", err)
-        return
+        os.Exit(1)
     }
     err = yaml.Unmarshal([]byte(data), &conf)
     if err != nil {
 	    fmt.Println("Failed to unmarshal configuration: ", err)
-        return
+	    os.Exit(1)
     }
 	
     http.HandleFunc("/beat", handler)

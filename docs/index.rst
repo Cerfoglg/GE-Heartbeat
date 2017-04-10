@@ -79,7 +79,7 @@ GE Heartbeat Service
 ---------------------
 The GE Heartbeat script creates a JSON to represent a Heartbeat and posts it to a
 Golang microservice, simply referred to as the GE Heartbeat Service. It offers a 
-REST API that receives Heartbeats and sends them to Monasca in the form of metrics. 
+REST API (on the /beat endpoint) that receives Heartbeats and sends them to Monasca in the form of metrics. 
 The main purpose of the service is to handle authentication: obtaining a token from 
 Keystone, using a username and password for login details, and posting the heartbeat 
 metric to the Monasca API, authenticating using the received token. 

@@ -111,6 +111,30 @@ func handler(w http.ResponseWriter, r *http.Request) {
     }
     resp.Body.Close()
 }
+
+func setConfEnvVariables() {
+	if os.Getenv("KEYSTONE_HOST") != "" {
+		conf.KEYSTONE_HOST = os.Getenv("KEYSTONE_HOST")
+	}
+	if os.Getenv("KEYSTONE_PORT") != "" {
+		conf.KEYSTONE_HOST = os.Getenv("KEYSTONE_PORT")
+	}
+	if os.Getenv("MONASCA_HOST") != "" {
+		conf.KEYSTONE_HOST = os.Getenv("MONASCA_HOST")
+	}
+	if os.Getenv("MONASCA_PORT") != "" {
+		conf.KEYSTONE_HOST = os.Getenv("MONASCA_PORT")
+	}
+	if os.Getenv("USERNAME") != "" {
+		conf.KEYSTONE_HOST = os.Getenv("USERNAME")
+	}
+	if os.Getenv("PASSWORD") != "" {
+		conf.KEYSTONE_HOST = os.Getenv("PASSWORD")
+	}
+	if os.Getenv("TENANT") != "" {
+		conf.KEYSTONE_HOST = os.Getenv("TENANT")
+	}
+}
  
 func main() {
 	// Reading configuration
@@ -125,6 +149,7 @@ func main() {
 	    fmt.Println("Failed to unmarshal configuration: ", err)
 	    os.Exit(1)
     }
+    setConfEnvVariables()
 	
     http.HandleFunc("/beat", handler)
     http.ListenAndServe(":8080", nil)

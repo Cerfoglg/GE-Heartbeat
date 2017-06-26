@@ -31,6 +31,10 @@ updated versions of the script (using wget with the -N flag) and downloads the u
 
 For Ubuntu/Debian, add the following to the Dockerfile::
 
+  # Set env variable for GE Id and Version (Eg. Orion, 1.0)
+  ENV GENERIC_ENABLER_ID="Orion"
+  ENV GENERIC_ENABLER_VERSION="1.0"
+
 	# Installing some dependencies
 	RUN apt-get update && apt-get install -y wget curl jq cron
 
@@ -38,17 +42,17 @@ For Ubuntu/Debian, add the following to the Dockerfile::
 	RUN wget -N <SCRIPT> -P / && chmod +x /<SCRIPT>
 
 	# Add crontab to run the script every hour
-	RUN echo '0 * * * * cd / && ./<SCRIPT>' | crontab
+  RUN echo 'HEARTBEAT_SERVICE_HOST="http://heartbeat:8080/beat"\nGENERIC_ENABLER_ID="Orion"\nGENERIC_ENABLER_VERSION="1.0"\n* * * * * cd / && ./<SCRIPT>' | crontab
 	RUN echo '30 0 * * * wget -N <SCRIPT> -P / && chmod +x /<SCRIPT>' | crontab
-
-	# Set env variable for GE Id and Version (Eg. Orion, 1.0)
-	ENV GENERIC_ENABLER_ID="Orion"
-	ENV GENERIC_ENABLER_VERSION="1.0"
 
 	# Start cron if not started already
 	CMD cron -f
 
 For CentOS, add the following to the Dockerfile::
+
+  # Set env variable for GE Id and Version (Eg. Orion, 1.0)
+  ENV GENERIC_ENABLER_ID="Orion"
+  ENV GENERIC_ENABLER_VERSION="1.0"
 
 	# Installing some dependencies
 	RUN yum update && yum install -y wget curl cronie
@@ -58,12 +62,8 @@ For CentOS, add the following to the Dockerfile::
 	RUN wget -N <SCRIPT> -P / && chmod +x /<SCRIPT>
 
 	# Add crontab to run the script every hour
-	RUN echo '0 * * * * cd / && ./<SCRIPT>' | crontab
+	RUN echo 'HEARTBEAT_SERVICE_HOST="http://heartbeat:8080/beat"\nGENERIC_ENABLER_ID="Orion"\nGENERIC_ENABLER_VERSION="1.0"\n* * * * * cd / && ./<SCRIPT>' | crontab
 	RUN echo '30 0 * * * wget -N <SCRIPT> -P / && chmod +x /<SCRIPT>' | crontab
-
-	# Set env variable for GE Id and Version (Eg. Orion, 1.0)
-	ENV GENERIC_ENABLER_ID="Orion"
-	ENV GENERIC_ENABLER_VERSION="1.0"
 
 	# Start cron if not started already
 	CMD crond -n

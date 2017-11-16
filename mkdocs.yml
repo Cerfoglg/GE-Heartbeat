@@ -1,0 +1,14 @@
+site_name: GE Heartbeat
+repo_url: https://github.com/martel-innovate/GE-Heartbeat
+site_description: GE Heartbeat Documentation
+docs_dir: 'docs'
+theme: readthedocs
+pages:
+    - Home: 'index.md'
+    - User Manual:
+        - 'GE Heartbeat Script': 'user/script.md'
+    - Installation & Administration Manual:
+        - 'GE Heartbeat Microservice': 'admin/service.md'
+    - Code Repository: 'code_repo.md'
+    - Roadmap: 'roadmap.md'
+extra_css: ["https://fiware.org/style/fiware_readthedocs.css"]
